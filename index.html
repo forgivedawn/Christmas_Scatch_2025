@@ -2,8 +2,8 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Merry Christmas from Dawn</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dawn's Xmas Gift</title>
     <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -17,8 +17,7 @@
             background: radial-gradient(circle, #1a472a, #0a2e1a);
             color: var(--snow-white);
             display: flex; flex-direction: column; align-items: center; 
-            padding: 20px; 
-            /* 預設字體 */
+            padding: 10px; 
             font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
             min-height: 100vh; margin: 0;
             overflow-x: hidden;
@@ -26,107 +25,135 @@
 
         h2 { 
             font-family: 'Mountains of Christmas', cursive;
-            font-size: 3em; color: var(--gold); margin-bottom: 5px;
-            text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+            font-size: 2.2em; color: var(--gold); margin: 15px 0 5px 0;
+            text-align: center;
         }
 
         .subtitle { 
-            font-size: 1.1em; margin-bottom: 30px; 
-            letter-spacing: 1px; opacity: 0.9; 
+            font-size: 0.9em; margin-bottom: 20px; opacity: 0.9; text-align: center;
         }
 
+        /* 針對手機優化的 5x5 網格 */
         .grid-container {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 12px;
-            max-width: 600px;
-            width: 100%;
+            gap: 6px; /* 手機版間距縮小 */
+            width: 98vw;
+            max-width: 500px;
             background: rgba(255,255,255,0.05);
-            padding: 20px;
-            border-radius: 20px;
-            border: 3px solid var(--gold);
-            box-shadow: 0 15px 50px rgba(0,0,0,0.6);
+            padding: 8px;
+            border-radius: 12px;
+            border: 2px solid var(--gold);
+            box-sizing: border-box;
         }
 
         .scratch-item {
             position: relative;
             aspect-ratio: 1 / 1;
             background: #fff9e6;
-            border-radius: 10px;
+            border-radius: 6px;
             overflow: hidden;
             border: 1px solid var(--gold);
         }
 
-        /* 內容字體優化 */
         .content {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            text-align: center; padding: 10px; box-sizing: border-box;
+            text-align: center; box-sizing: border-box;
             color: var(--xmas-red);
-            /* 序號使用等寬字體，易於辨識 */
-            font-family: 'JetBrains Mono', 'Courier New', monospace;
-            font-size: 14px;
-            line-height: 1.4;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px; /* 手機版序號字體 */
             opacity: 0; 
             transition: opacity 0.3s;
-            user-select: all; /* 允許朋友長按選取序號 */
+            cursor: pointer;
+            padding: 2px;
         }
 
-        /* 加重顯示序號標籤 */
-        .content span {
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            opacity: 0.7;
-            margin-bottom: 4px;
+        /* 序號樣式 */
+        .code-text {
+            font-size: 9px;
+            background: rgba(179, 0, 12, 0.1);
+            padding: 2px;
+            border-radius: 3px;
+            word-break: break-all;
+            margin-top: 2px;
+            display: block;
         }
 
         canvas {
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            cursor: crosshair;
             z-index: 2;
-            touch-action: none;
+            touch-action: none; /* 重要：防止手機刮的時候網頁滾動 */
         }
 
-        .footer { 
-            margin-top: 40px; 
-            font-family: 'Mountains of Christmas', cursive;
-            font-size: 1.5em; color: var(--gold); 
+        /* 複製提示小視窗 */
+        #toast {
+            visibility: hidden;
+            min-width: 150px;
+            background-color: var(--gold);
+            color: #000;
+            text-align: center;
+            border-radius: 50px;
+            padding: 10px;
+            position: fixed;
+            z-index: 10;
+            bottom: 30px;
+            font-weight: bold;
         }
+
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 1.5s; }
+
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+        .footer { margin-top: 25px; font-family: 'Mountains of Christmas', cursive; color: var(--gold); }
     </style>
 </head>
 <body>
 
-    <h2>🎄 Dofinn's Xmas Gift 🎁</h2>
-    <p class="subtitle">刮開領取高級大禮包</p>
+    <h2>🎄 Dofinn's Xmas 🎁</h2>
+    <p class="subtitle">點擊刮開後的序號即可複製</p>
 
     <div class="grid-container" id="grid"></div>
-
-    <div class="footer">Wishing you a Golden Christmas ✨</div>
+    <div id="toast">✅ 序號已複製</div>
+    <div class="footer">Wishing you a Golden Xmas ✨</div>
 
     <script>
         const grid = document.getElementById('grid');
+        const toast = document.getElementById('toast');
 
         const myRealCodes = [
-            "OTR-47B5876W93", "OTR-QT4KYTEQBL", "OTR-873J53LDT3", "OTR-6YGAMBHNEV",
-            "OTR-BA9PF8FZ5W", "OTR-L5MSB2UDQ3", "OTR-YC2GU6M3A2", "OTR-33D262ZEKP",
-            "OTR-T1JHN5U6MD", "OTR-YMS9UBYV47", "OTR-23TS4MUKVB"
+"OTR-47B5876W93", 
+"OTR-QT4KYTEQBL", 
+"OTR-873J53LDT3", 
+"OTR-6YGAMBHNEV",
+"OTR-BA9PF8FZ5W",
+"OTR-L5MSB2UDQ3",
+"OTR-YC2GU6M3A2",
+"OTR-33D262ZEKP",
+"OTR-T1JHN5U6MD",
+"OTR-YMS9UBYV47",
+"OTR-23TS4MUKVB"
         ];
 
-        const dummyTexts = ["❄️<br>銘謝惠顧", "🎄<br>再接再厲", "🎅<br>差一點點", "🎁<br>祝你好運"];
+        const dummyTexts = ["❄️<br>再接再厲", "🎄<br>Merry Xmas", "🎅<br>差一點點", "🎁<br>祝你好運"];
+
+        function showToast() {
+            toast.className = "show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 2000);
+        }
 
         function generatePrizePool() {
             let pool = [];
             myRealCodes.forEach(code => {
-                // 將序號包裝在 span 裡面以利樣式區分
-                pool.push(`<span>GIFT CODE</span><strong>${code}</strong>`);
+                pool.push({ type: 'code', val: code });
             });
             const remainingCount = 25 - pool.length;
             for (let i = 0; i < remainingCount; i++) {
-                pool.push(dummyTexts[Math.floor(Math.random() * dummyTexts.length)]);
+                pool.push({ type: 'text', val: dummyTexts[Math.floor(Math.random() * dummyTexts.length)] });
             }
             for (let i = pool.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -141,9 +168,22 @@
             const container = document.createElement('div');
             container.className = 'scratch-item';
 
+            const prize = finalPrizes[index];
             const content = document.createElement('div');
             content.className = 'content';
-            content.innerHTML = finalPrizes[index];
+            
+            if (prize.type === 'code') {
+                content.innerHTML = `<span>GIFT</span><b class="code-text">${prize.val}</b>`;
+                // 點擊複製功能
+                content.onclick = () => {
+                    navigator.clipboard.writeText(prize.val).then(() => {
+                        showToast();
+                        if (navigator.vibrate) navigator.vibrate(50); // 手機震動回饋
+                    });
+                };
+            } else {
+                content.innerHTML = prize.val;
+            }
 
             const canvas = document.createElement('canvas');
             container.appendChild(content);
@@ -156,21 +196,16 @@
             function init() {
                 canvas.width = container.offsetWidth;
                 canvas.height = container.offsetHeight;
-                
                 ctx.fillStyle = (index % 2 === 0) ? '#b3000c' : '#004b23';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
                 ctx.fillStyle = '#d4af37';
-                for(let i=0; i<40; i++) {
-                    ctx.beginPath();
-                    ctx.arc(Math.random()*canvas.width, Math.random()*canvas.height, 1, 0, Math.PI*2);
-                    ctx.fill();
+                for(let i=0; i<30; i++) {
+                    ctx.beginPath(); ctx.arc(Math.random()*canvas.width, Math.random()*canvas.height, 1, 0, Math.PI*2); ctx.fill();
                 }
-
-                ctx.strokeStyle = 'rgba(212, 175, 55, 0.5)';
-                ctx.lineWidth = 6;
-                ctx.strokeRect(canvas.width/2 - 3, 0, 6, canvas.height);
-                ctx.strokeRect(0, canvas.height/2 - 3, canvas.width, 6);
+                ctx.strokeStyle = 'rgba(212, 175, 55, 0.4)';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(canvas.width/2-2, 0, 4, canvas.height);
+                ctx.strokeRect(0, canvas.height/2-2, canvas.width, 4);
 
                 content.style.opacity = "1";
                 ctx.globalCompositeOperation = 'destination-out';
@@ -182,7 +217,7 @@
                 const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
                 const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
                 ctx.beginPath();
-                ctx.arc(x, y, 20, 0, Math.PI * 2);
+                ctx.arc(x, y, 16, 0, Math.PI * 2);
                 ctx.fill();
             }
 
@@ -193,7 +228,7 @@
             canvas.addEventListener('touchend', () => isDrawing = false);
             canvas.addEventListener('touchmove', (e) => { scratch(e); e.preventDefault(); });
 
-            setTimeout(init, 50);
+            setTimeout(init, 100);
         }
 
         for (let i = 0; i < 25; i++) {
@@ -201,6 +236,4 @@
         }
     </script>
 </body>
-
 </html>
-
