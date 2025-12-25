@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dawn's Xmas Gift v5</title>
+    <title>Xmas Gift from Dawn</title>
     <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -27,9 +27,12 @@
             font-family: 'Mountains of Christmas', cursive;
             font-size: 2.2em; color: var(--gold); margin: 15px 0 5px 0;
             text-align: center;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
         }
 
-        .subtitle { font-size: 0.9em; margin-bottom: 20px; opacity: 0.9; text-align: center; }
+        .subtitle { 
+            font-size: 0.9em; margin-bottom: 20px; opacity: 0.9; text-align: center;
+        }
 
         .grid-container {
             display: grid;
@@ -41,6 +44,7 @@
             padding: 8px;
             border-radius: 12px;
             border: 2px solid var(--gold);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             box-sizing: border-box;
         }
 
@@ -61,9 +65,18 @@
             color: var(--xmas-red);
             font-family: 'JetBrains Mono', monospace;
             font-size: 10px;
-            opacity: 1; /* 預設為 1，被 canvas 擋住即可 */
             padding: 2px;
-            user-select: none;
+            pointer-events: none; /* 未解鎖前不可點擊 */
+            transition: transform 0.2s;
+        }
+
+        /* 解鎖後樣式 */
+        .is-unlocked .content {
+            pointer-events: auto;
+            cursor: pointer;
+        }
+        .is-unlocked .content:active {
+            transform: scale(0.95);
         }
 
         .code-text {
@@ -74,6 +87,7 @@
             word-break: break-all;
             margin-top: 2px;
             display: block;
+            border: 1px dashed var(--xmas-red);
         }
 
         canvas {
@@ -84,28 +98,24 @@
             touch-action: none;
         }
 
-        /* 當 canvas 加上這個類別時，點擊會穿透到下方的 content */
-        .scratched {
-            pointer-events: none;
-        }
-
         #toast {
             visibility: hidden; min-width: 150px; background-color: var(--gold); color: #000;
             text-align: center; border-radius: 50px; padding: 10px; position: fixed;
-            z-index: 10; bottom: 30px; font-weight: bold;
+            z-index: 999; bottom: 30px; font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
         #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 1.5s; }
 
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
 
-        .footer { margin-top: 25px; font-family: 'Mountains of Christmas', cursive; color: var(--gold); }
+        .footer { margin-top: 25px; font-family: 'Mountains of Christmas', cursive; color: var(--gold); font-size: 1.2em; }
     </style>
 </head>
 <body>
 
-    <h2>🎄 Pushy's Xmas 🎁</h2>
-    <p class="subtitle">用力刮開後，點擊序號即可複製</p>
+    <h2>🎄 Dofinn's Xmas 🎁</h2>
+    <p class="subtitle">刮開領取聖誕禮物</p>
 
     <div class="grid-container" id="grid"></div>
     <div id="toast">✅ 序號已複製</div>
@@ -121,69 +131,49 @@
             "OTR-T1JHN5U6MD", "OTR-YMS9UBYV47", "OTR-23TS4MUKVB"
         ];
 
-        const dummyTexts = ["❄️<br>再接再厲", "🎄<br>Merry Xmas", "🎅<br>差一點點", "🎁<br>祝你好運"];
+        const dummyTexts = ["❄️<br>加油", "🎄<br>Merry Xmas", "🎅<br>差一點", "🎁<br>好運"];
 
         function showToast() {
             toast.className = "show";
-            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 2000);
+            setTimeout(() => { toast.className = ""; }, 2000);
         }
 
-        // 備援複製方案
         function fallbackCopy(text) {
             const textArea = document.createElement("textarea");
             textArea.value = text;
             textArea.style.position = "fixed";
             textArea.style.left = "-9999px";
-            textArea.style.top = "0";
             document.body.appendChild(textArea);
             textArea.focus();
             textArea.select();
-            try {
-                document.execCommand('copy');
-                showToast();
-                if (navigator.vibrate) navigator.vibrate(50);
-            } catch (err) {
-                console.error('無法複製', err);
-            }
+            document.execCommand('copy');
             document.body.removeChild(textArea);
+            showToast();
         }
 
-        function generatePrizePool() {
-            let pool = [];
-            myRealCodes.forEach(code => pool.push({ type: 'code', val: code }));
-            const remainingCount = 25 - pool.length;
-            for (let i = 0; i < remainingCount; i++) {
-                pool.push({ type: 'text', val: dummyTexts[Math.floor(Math.random() * dummyTexts.length)] });
-            }
-            for (let i = pool.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [pool[i], pool[j]] = [pool[j], pool[i]];
-            }
-            return pool;
-        }
-
-        const finalPrizes = generatePrizePool();
+        const pool = (function() {
+            let p = myRealCodes.map(v => ({type:'code', val:v}));
+            while(p.length < 25) p.push({type:'text', val:dummyTexts[Math.floor(Math.random()*dummyTexts.length)]});
+            return p.sort(() => Math.random() - 0.5);
+        })();
 
         function createCard(index) {
             const container = document.createElement('div');
             container.className = 'scratch-item';
 
-            const prize = finalPrizes[index];
+            const prize = pool[index];
             const content = document.createElement('div');
             content.className = 'content';
             
             if (prize.type === 'code') {
                 content.innerHTML = `<span>GIFT</span><b class="code-text">${prize.val}</b>`;
                 content.onclick = function() {
-                    const textToCopy = prize.val;
                     if (navigator.clipboard && window.isSecureContext) {
-                        navigator.clipboard.writeText(textToCopy).then(() => {
-                            showToast();
-                            if (navigator.vibrate) navigator.vibrate(50);
-                        }).catch(() => fallbackCopy(textToCopy));
+                        navigator.clipboard.writeText(prize.val).then(showToast).catch(() => fallbackCopy(prize.val));
                     } else {
-                        fallbackCopy(textToCopy);
+                        fallbackCopy(prize.val);
                     }
+                    if (navigator.vibrate) navigator.vibrate(50);
                 };
             } else {
                 content.innerHTML = prize.val;
@@ -194,25 +184,27 @@
             container.appendChild(canvas);
             grid.appendChild(container);
 
-            const ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
             let isDrawing = false;
-            let scratchedPixels = 0;
 
-            function init() {
-                canvas.width = container.offsetWidth;
-                canvas.height = container.offsetHeight;
+            function initCanvas() {
+                canvas.width = container.clientWidth;
+                canvas.height = container.clientHeight;
+                
                 ctx.fillStyle = (index % 2 === 0) ? '#b3000c' : '#004b23';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
                 ctx.fillStyle = '#d4af37';
-                for(let i=0; i<30; i++) {
+                for(let i=0; i<25; i++) {
                     ctx.beginPath();
-                    ctx.arc(Math.random()*canvas.width, Math.random()*canvas.height, 1, 0, Math.PI*2);
+                    ctx.arc(Math.random()*canvas.width, Math.random()*canvas.height, 0.8, 0, Math.PI*2);
                     ctx.fill();
                 }
+
                 ctx.strokeStyle = 'rgba(212, 175, 55, 0.4)';
-                ctx.lineWidth = 4;
-                ctx.strokeRect(canvas.width/2-2, 0, 4, canvas.height);
-                ctx.strokeRect(0, canvas.height/2-2, canvas.width, 4);
+                ctx.lineWidth = 3;
+                ctx.strokeRect(canvas.width/2-1.5, 0, 3, canvas.height);
+                ctx.strokeRect(0, canvas.height/2-1.5, canvas.width, 3);
 
                 ctx.globalCompositeOperation = 'destination-out';
             }
@@ -221,4 +213,44 @@
                 if (!isDrawing) return;
                 const rect = canvas.getBoundingClientRect();
                 const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
-                const y = (e.clientY || (e.touches && e.touches[0].clientY))
+                const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 16, 0, Math.PI * 2);
+                ctx.fill();
+
+                checkAndUnlock();
+            }
+
+            function checkAndUnlock() {
+                const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                let cleared = 0;
+                for (let i = 3; i < imgData.data.length; i += 4) {
+                    if (imgData.data[i] === 0) cleared++;
+                }
+                // 修改門檻為 90% (0.9)
+                if (cleared > (canvas.width * canvas.height) * 0.9) {
+                    container.classList.add('is-unlocked');
+                    canvas.style.pointerEvents = 'none';
+                    canvas.style.opacity = '0'; // 達成後讓殘餘畫布消失，視覺更乾淨
+                    canvas.style.transition = 'opacity 0.5s';
+                }
+            }
+
+            canvas.addEventListener('mousedown', () => isDrawing = true);
+            window.addEventListener('mouseup', () => isDrawing = false);
+            canvas.addEventListener('mousemove', scratch);
+            canvas.addEventListener('touchstart', (e) => { isDrawing = true; scratch(e); });
+            canvas.addEventListener('touchend', () => isDrawing = false);
+            canvas.addEventListener('touchmove', (e) => { scratch(e); e.preventDefault(); });
+
+            window.addEventListener('load', initCanvas);
+            setTimeout(initCanvas, 500); 
+        }
+
+        for (let i = 0; i < 25; i++) {
+            createCard(i);
+        }
+    </script>
+</body>
+</html>
