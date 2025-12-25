@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pushy's Xmas Gift v4</title>
+    <title>Dawn's Xmas Gift v5</title>
     <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -61,9 +61,7 @@
             color: var(--xmas-red);
             font-family: 'JetBrains Mono', monospace;
             font-size: 10px;
-            opacity: 0; 
-            transition: opacity 0.3s;
-            cursor: pointer;
+            opacity: 1; /* 預設為 1，被 canvas 擋住即可 */
             padding: 2px;
             user-select: none;
         }
@@ -86,6 +84,11 @@
             touch-action: none;
         }
 
+        /* 當 canvas 加上這個類別時，點擊會穿透到下方的 content */
+        .scratched {
+            pointer-events: none;
+        }
+
         #toast {
             visibility: hidden; min-width: 150px; background-color: var(--gold); color: #000;
             text-align: center; border-radius: 50px; padding: 10px; position: fixed;
@@ -102,7 +105,7 @@
 <body>
 
     <h2>🎄 Pushy's Xmas 🎁</h2>
-    <p class="subtitle">點擊刮開後的序號即可複製</p>
+    <p class="subtitle">用力刮開後，點擊序號即可複製</p>
 
     <div class="grid-container" id="grid"></div>
     <div id="toast">✅ 序號已複製</div>
@@ -118,4 +121,104 @@
             "OTR-T1JHN5U6MD", "OTR-YMS9UBYV47", "OTR-23TS4MUKVB"
         ];
 
-        const dummyTexts = ["❄️<br>再接
+        const dummyTexts = ["❄️<br>再接再厲", "🎄<br>Merry Xmas", "🎅<br>差一點點", "🎁<br>祝你好運"];
+
+        function showToast() {
+            toast.className = "show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 2000);
+        }
+
+        // 備援複製方案
+        function fallbackCopy(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            textArea.style.top = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast();
+                if (navigator.vibrate) navigator.vibrate(50);
+            } catch (err) {
+                console.error('無法複製', err);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function generatePrizePool() {
+            let pool = [];
+            myRealCodes.forEach(code => pool.push({ type: 'code', val: code }));
+            const remainingCount = 25 - pool.length;
+            for (let i = 0; i < remainingCount; i++) {
+                pool.push({ type: 'text', val: dummyTexts[Math.floor(Math.random() * dummyTexts.length)] });
+            }
+            for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
+            return pool;
+        }
+
+        const finalPrizes = generatePrizePool();
+
+        function createCard(index) {
+            const container = document.createElement('div');
+            container.className = 'scratch-item';
+
+            const prize = finalPrizes[index];
+            const content = document.createElement('div');
+            content.className = 'content';
+            
+            if (prize.type === 'code') {
+                content.innerHTML = `<span>GIFT</span><b class="code-text">${prize.val}</b>`;
+                content.onclick = function() {
+                    const textToCopy = prize.val;
+                    if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(textToCopy).then(() => {
+                            showToast();
+                            if (navigator.vibrate) navigator.vibrate(50);
+                        }).catch(() => fallbackCopy(textToCopy));
+                    } else {
+                        fallbackCopy(textToCopy);
+                    }
+                };
+            } else {
+                content.innerHTML = prize.val;
+            }
+
+            const canvas = document.createElement('canvas');
+            container.appendChild(content);
+            container.appendChild(canvas);
+            grid.appendChild(container);
+
+            const ctx = canvas.getContext('2d');
+            let isDrawing = false;
+            let scratchedPixels = 0;
+
+            function init() {
+                canvas.width = container.offsetWidth;
+                canvas.height = container.offsetHeight;
+                ctx.fillStyle = (index % 2 === 0) ? '#b3000c' : '#004b23';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#d4af37';
+                for(let i=0; i<30; i++) {
+                    ctx.beginPath();
+                    ctx.arc(Math.random()*canvas.width, Math.random()*canvas.height, 1, 0, Math.PI*2);
+                    ctx.fill();
+                }
+                ctx.strokeStyle = 'rgba(212, 175, 55, 0.4)';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(canvas.width/2-2, 0, 4, canvas.height);
+                ctx.strokeRect(0, canvas.height/2-2, canvas.width, 4);
+
+                ctx.globalCompositeOperation = 'destination-out';
+            }
+
+            function scratch(e) {
+                if (!isDrawing) return;
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
+                const y = (e.clientY || (e.touches && e.touches[0].clientY))
