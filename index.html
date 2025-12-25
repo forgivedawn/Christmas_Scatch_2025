@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dawn's Xmas Gift</title>
+    <title>Dawn's Xmas Gift v3</title>
     <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -164,7 +164,7 @@
 
         const finalPrizes = generatePrizePool();
 
-        function createCard(index) {
+  function createCard(index) {
             const container = document.createElement('div');
             container.className = 'scratch-item';
 
@@ -174,66 +174,46 @@
             
             if (prize.type === 'code') {
                 content.innerHTML = `<span>GIFT</span><b class="code-text">${prize.val}</b>`;
-                // 點擊複製功能
-                content.onclick = () => {
-                    navigator.clipboard.writeText(prize.val).then(() => {
-                        showToast();
-                        if (navigator.vibrate) navigator.vibrate(50); // 手機震動回饋
-                    });
+                
+                // 強化版點擊複製功能
+                content.onclick = function() {
+                    const textToCopy = prize.val;
+                    
+                    // 優先使用現代 API
+                    if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(textToCopy).then(() => {
+                            showToast();
+                            if (navigator.vibrate) navigator.vibrate(50);
+                        }).catch(err => fallbackCopy(textToCopy)); // 失敗則進入備援
+                    } else {
+                        fallbackCopy(textToCopy); // 非安全環境進入備援
+                    }
                 };
             } else {
                 content.innerHTML = prize.val;
             }
 
-            const canvas = document.createElement('canvas');
-            container.appendChild(content);
-            container.appendChild(canvas);
-            grid.appendChild(container);
-
-            const ctx = canvas.getContext('2d');
-            let isDrawing = false;
-
-            function init() {
-                canvas.width = container.offsetWidth;
-                canvas.height = container.offsetHeight;
-                ctx.fillStyle = (index % 2 === 0) ? '#b3000c' : '#004b23';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#d4af37';
-                for(let i=0; i<30; i++) {
-                    ctx.beginPath(); ctx.arc(Math.random()*canvas.width, Math.random()*canvas.height, 1, 0, Math.PI*2); ctx.fill();
+            // 備援複製方案：建立隱藏的 textarea
+            function fallbackCopy(text) {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                // 防止網頁捲動
+                textArea.style.top = "0";
+                textArea.style.left = "0";
+                textArea.style.position = "fixed";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showToast();
+                    if (navigator.vibrate) navigator.vibrate(50);
+                } catch (err) {
+                    console.error('無法複製', err);
                 }
-                ctx.strokeStyle = 'rgba(212, 175, 55, 0.4)';
-                ctx.lineWidth = 4;
-                ctx.strokeRect(canvas.width/2-2, 0, 4, canvas.height);
-                ctx.strokeRect(0, canvas.height/2-2, canvas.width, 4);
-
-                content.style.opacity = "1";
-                ctx.globalCompositeOperation = 'destination-out';
+                document.body.removeChild(textArea);
             }
-
-            function scratch(e) {
-                if (!isDrawing) return;
-                const rect = canvas.getBoundingClientRect();
-                const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
-                const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
-                ctx.beginPath();
-                ctx.arc(x, y, 16, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            canvas.addEventListener('mousedown', () => isDrawing = true);
-            window.addEventListener('mouseup', () => isDrawing = false);
-            canvas.addEventListener('mousemove', scratch);
-            canvas.addEventListener('touchstart', (e) => { isDrawing = true; });
-            canvas.addEventListener('touchend', () => isDrawing = false);
-            canvas.addEventListener('touchmove', (e) => { scratch(e); e.preventDefault(); });
-
-            setTimeout(init, 100);
-        }
-
-        for (let i = 0; i < 25; i++) {
-            createCard(i);
-        }
     </script>
 </body>
 </html>
+
