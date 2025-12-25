@@ -3,253 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Xmas Gift from Dawn</title>
+    <title>Xmas Gift Generator</title>
     <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --xmas-red: #b3000c;
-            --xmas-green: #004b23;
-            --gold: #d4af37;
-            --snow-white: #ffffff;
-        }
-
+        :root { --xmas-red: #b3000c; --xmas-green: #004b23; --gold: #d4af37; --snow-white: #ffffff; }
         body { 
-            background: radial-gradient(circle, #1a472a, #0a2e1a);
-            color: var(--snow-white);
-            display: flex; flex-direction: column; align-items: center; 
-            padding: 10px; 
-            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-            min-height: 100vh; margin: 0;
-            overflow-x: hidden;
+            background: radial-gradient(circle, #1a472a, #0a2e1a); color: var(--snow-white);
+            display: flex; flex-direction: column; align-items: center; padding: 10px; 
+            font-family: 'PingFang TC', sans-serif; min-height: 100vh; margin: 0;
         }
+        h2 { font-family: 'Mountains of Christmas', cursive; font-size: 2.2em; color: var(--gold); text-align: center; margin: 15px 0; }
+        
+        /* 設定介面 */
+        #setup-ui { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; border: 2px solid var(--gold); width: 90%; max-width: 450px; margin-top: 10px; }
+        .form-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; margin-bottom: 5px; font-size: 0.9em; color: var(--gold); }
+        input, textarea, select { width: 100%; border-radius: 8px; padding: 10px; box-sizing: border-box; border: 1px solid var(--gold); background: #fff; font-family: inherit; }
+        textarea { height: 80px; }
+        .btn { background: var(--gold); color: #000; border: none; padding: 12px; border-radius: 25px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1em; margin-top: 10px; }
+        #share-url-area { margin-top: 15px; display: none; background: #fff; color: #333; padding: 15px; border-radius: 8px; font-size: 0.85em; }
+        #final-link { word-break: break-all; color: var(--xmas-red); display: block; margin: 10px 0; padding: 5px; border: 1px solid #ccc; }
 
-        h2 { 
-            font-family: 'Mountains of Christmas', cursive;
-            font-size: 2.2em; color: var(--gold); margin: 15px 0 5px 0;
-            text-align: center;
-            text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+        /* 遊戲介面 */
+        #game-ui { display: none; flex-direction: column; align-items: center; width: 100%; }
+        .grid-container { 
+            display: grid; gap: 8px; width: 98vw; max-width: 500px; 
+            padding: 10px; border-radius: 12px; border: 2px solid var(--gold); 
+            background: rgba(255,255,255,0.05); box-sizing: border-box;
         }
-
-        .subtitle { 
-            font-size: 0.9em; margin-bottom: 20px; opacity: 0.9; text-align: center;
-        }
-
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
-            width: 98vw;
-            max-width: 500px;
-            background: rgba(255,255,255,0.05);
-            padding: 8px;
-            border-radius: 12px;
-            border: 2px solid var(--gold);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            box-sizing: border-box;
-        }
-
-        .scratch-item {
-            position: relative;
-            aspect-ratio: 1 / 1;
-            background: #fff9e6;
-            border-radius: 6px;
-            overflow: hidden;
-            border: 1px solid var(--gold);
-        }
-
-        .content {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            text-align: center; box-sizing: border-box;
-            color: var(--xmas-red);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 10px;
-            padding: 2px;
-            pointer-events: none; /* 未解鎖前不可點擊 */
-            transition: transform 0.2s;
-        }
-
-        /* 解鎖後樣式 */
-        .is-unlocked .content {
-            pointer-events: auto;
-            cursor: pointer;
-        }
-        .is-unlocked .content:active {
-            transform: scale(0.95);
-        }
-
-        .code-text {
-            font-size: 9px;
-            background: rgba(179, 0, 12, 0.1);
-            padding: 2px;
-            border-radius: 3px;
-            word-break: break-all;
-            margin-top: 2px;
-            display: block;
-            border: 1px dashed var(--xmas-red);
-        }
-
-        canvas {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 2;
-            touch-action: none;
-        }
-
-        #toast {
-            visibility: hidden; min-width: 150px; background-color: var(--gold); color: #000;
-            text-align: center; border-radius: 50px; padding: 10px; position: fixed;
-            z-index: 999; bottom: 30px; font-weight: bold;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
+        .scratch-item { position: relative; aspect-ratio: 1 / 1; background: #fff9e6; border-radius: 6px; overflow: hidden; border: 1px solid var(--gold); }
+        .content { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: var(--xmas-red); font-family: 'JetBrains Mono', monospace; font-size: 10px; pointer-events: none; }
+        .is-unlocked .content { pointer-events: auto; cursor: pointer; }
+        .code-text { font-size: 9px; background: rgba(179,0,12,0.1); padding: 2px; margin-top: 2px; border: 1px dashed var(--xmas-red); display: block; }
+        canvas { position: absolute; inset: 0; z-index: 2; touch-action: none; width: 100%; height: 100%; }
+        #toast { visibility: hidden; min-width: 150px; background-color: var(--gold); color: #000; text-align: center; border-radius: 50px; padding: 10px; position: fixed; bottom: 30px; font-weight: bold; z-index: 999; }
         #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 1.5s; }
-
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
-
-        .footer { margin-top: 25px; font-family: 'Mountains of Christmas', cursive; color: var(--gold); font-size: 1.2em; }
     </style>
 </head>
 <body>
 
-    <h2>🎄 Dofinn's Xmas 🎁</h2>
-    <p class="subtitle">刮開領取聖誕禮物</p>
+    <h2 id="display-h2">🎄 Xmas Gift Generator</h2>
 
-    <div class="grid-container" id="grid"></div>
-    <div id="toast">✅ 序號已複製</div>
-    <div class="footer">Wishing you a Golden Xmas ✨</div>
+    <div id="setup-ui">
+        <div class="form-group">
+            <label>1. 標題 (H2 Title)</label>
+            <input type="text" id="in-h2" value="🎄 Dofinn's Xmas 🎁">
+        </div>
+        <div class="form-group">
+            <label>2. 內文說明 (Subtitle)</label>
+            <input type="text" id="in-sub" value="刮開領取 The golden ratio sheet 序號">
+        </div>
+        <div class="form-group">
+            <label>3. 格子總數</label>
+            <select id="in-count">
+                <option value="3">3 格</option>
+                <option value="6">6 格</option>
+                <option value="9">9 格 (3x3)</option>
+                <option value="12">12 格</option>
+                <option value="16">16 格 (4x4)</option>
+                <option value="20">20 格</option>
+                <option value="25" selected>25 格 (5x5)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>4. 獎品序號 (每行一個)</label>
+            <textarea id="in-codes" placeholder="輸入你要送出的序號..."></textarea>
+        </div>
+        <button class="btn" onclick="generateLink()">生成驚喜連結</button>
+
+        <div id="share-url-area">
+            <p style="margin:0; font-weight:bold;">✨ 專屬連結已生成：</p>
+            <span id="final-link"></span>
+            <button class="btn" style="background:#444; color:#fff;" onclick="copyLink()">一鍵複製連結</button>
+        </div>
+    </div>
+
+    <div id="game-ui">
+        <p id="display-sub" class="subtitle" style="margin-bottom:20px; text-align:center;"></p>
+        <div class="grid-container" id="grid"></div>
+        <div class="footer" style="margin-top:30px; font-family:'Mountains of Christmas'; color:var(--gold); font-size:1.2em;">Wishing you a Golden Xmas ✨</div>
+    </div>
+
+    <div id="toast">✅ 已複製</div>
 
     <script>
+        const setupUI = document.getElementById('setup-ui');
+        const gameUI = document.getElementById('game-ui');
         const grid = document.getElementById('grid');
-        const toast = document.getElementById('toast');
 
-        const myRealCodes = [
-            "OTR-47B5876W93", "OTR-QT4KYTEQBL", "OTR-873J53LDT3", "OTR-6YGAMBHNEV",
-            "OTR-BA9PF8FZ5W", "OTR-L5MSB2UDQ3", "OTR-YC2GU6M3A2", "OTR-33D262ZEKP",
-            "OTR-T1JHN5U6MD", "OTR-YMS9UBYV47", "OTR-23TS4MUKVB"
-        ];
-
-        const dummyTexts = ["❄️<br>加油", "🎄<br>Merry Xmas", "🎅<br>差一點", "🎁<br>好運"];
-
-        function showToast() {
-            toast.className = "show";
-            setTimeout(() => { toast.className = ""; }, 2000);
+        // 生成連結
+        function generateLink() {
+            const config = {
+                h2: document.getElementById('in-h2').value,
+                sub: document.getElementById('in-sub').value,
+                count: parseInt(document.getElementById('in-count').value),
+                prizes: document.getElementById('in-codes').value.split('\n').filter(s => s.trim())
+            };
+            const encoded = btoa(encodeURIComponent(JSON.stringify(config)));
+            const finalURL = window.location.origin + window.location.pathname + "?data=" + encoded;
+            document.getElementById('final-link').innerText = finalURL;
+            document.getElementById('share-url-area').style.display = 'block';
         }
 
-        function fallbackCopy(text) {
-            const textArea = document.createElement("textarea");
-            textArea.value = text;
-            textArea.style.position = "fixed";
-            textArea.style.left = "-9999px";
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            showToast();
+        function copyLink() {
+            navigator.clipboard.writeText(document.getElementById('final-link').innerText).then(() => {
+                alert('連結已複製，快傳給朋友吧！');
+            });
         }
 
-        const pool = (function() {
-            let p = myRealCodes.map(v => ({type:'code', val:v}));
-            while(p.length < 25) p.push({type:'text', val:dummyTexts[Math.floor(Math.random()*dummyTexts.length)]});
-            return p.sort(() => Math.random() - 0.5);
-        })();
+        // 初始化判斷
+        const urlParams = new URLSearchParams(window.location.search);
+        const dataParam = urlParams.get('data');
 
-        function createCard(index) {
-            const container = document.createElement('div');
-            container.className = 'scratch-item';
+        if (dataParam) {
+            try {
+                const config = JSON.parse(decodeURIComponent(atob(dataParam)));
+                setupUI.style.display = 'none';
+                gameUI.style.display = 'flex';
+                document.getElementById('display-h2').innerText = config.h2;
+                document.getElementById('display-sub').innerText = config.sub;
+                document.title = config.h2;
+                renderGame(config);
+            } catch(e) { alert("連結無效"); }
+        }
 
-            const prize = pool[index];
+        function renderGame(config) {
+            const dummy = ["❄️<br>加油", "🎄<br>Merry Xmas", "🎅<br>差一點", "🎁<br>好運", "✨<br>Happy"];
+            let pool = config.prizes.map(p => ({type:'code', val:p}));
+            while(pool.length < config.count) pool.push({type:'text', val:dummy[Math.floor(Math.random()*dummy.length)]});
+            pool.sort(() => Math.random() - 0.5);
+
+            // 動態排版格子數
+            const cols = config.count <= 6 ? 2 : (config.count <= 12 ? 3 : (config.count <= 20 ? 4 : 5));
+            grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+            pool.forEach((p, i) => createCard(p, i));
+        }
+
+        function createCard(prize, index) {
+            const item = document.createElement('div');
+            item.className = 'scratch-item';
             const content = document.createElement('div');
             content.className = 'content';
             
             if (prize.type === 'code') {
                 content.innerHTML = `<span>GIFT</span><b class="code-text">${prize.val}</b>`;
-                content.onclick = function() {
-                    if (navigator.clipboard && window.isSecureContext) {
-                        navigator.clipboard.writeText(prize.val).then(showToast).catch(() => fallbackCopy(prize.val));
-                    } else {
-                        fallbackCopy(prize.val);
-                    }
-                    if (navigator.vibrate) navigator.vibrate(50);
+                content.onclick = () => {
+                    navigator.clipboard.writeText(prize.val).then(() => {
+                        document.getElementById('toast').className = "show";
+                        setTimeout(() => { document.getElementById('toast').className = ""; }, 2000);
+                        if(navigator.vibrate) navigator.vibrate(50);
+                    });
                 };
-            } else {
-                content.innerHTML = prize.val;
-            }
+            } else { content.innerHTML = prize.val; }
 
             const canvas = document.createElement('canvas');
-            container.appendChild(content);
-            container.appendChild(canvas);
-            grid.appendChild(container);
+            item.appendChild(content);
+            item.appendChild(canvas);
+            grid.appendChild(item);
 
             const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            let isDrawing = false;
-
-            function initCanvas() {
-                canvas.width = container.clientWidth;
-                canvas.height = container.clientHeight;
-                
+            function init() {
+                canvas.width = item.clientWidth; canvas.height = item.clientHeight;
                 ctx.fillStyle = (index % 2 === 0) ? '#b3000c' : '#004b23';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
                 ctx.fillStyle = '#d4af37';
-                for(let i=0; i<25; i++) {
-                    ctx.beginPath();
-                    ctx.arc(Math.random()*canvas.width, Math.random()*canvas.height, 0.8, 0, Math.PI*2);
-                    ctx.fill();
-                }
-
-                ctx.strokeStyle = 'rgba(212, 175, 55, 0.4)';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(canvas.width/2-1.5, 0, 3, canvas.height);
-                ctx.strokeRect(0, canvas.height/2-1.5, canvas.width, 3);
-
+                for(let i=0; i<20; i++) { ctx.beginPath(); ctx.arc(Math.random()*canvas.width, Math.random()*canvas.height, 0.8, 0, Math.PI*2); ctx.fill(); }
+                ctx.strokeStyle = 'rgba(212, 175, 55, 0.3)'; ctx.lineWidth = 2;
+                ctx.strokeRect(canvas.width/2-1, 0, 2, canvas.height); ctx.strokeRect(0, canvas.height/2-1, canvas.width, 2);
                 ctx.globalCompositeOperation = 'destination-out';
             }
 
+            let drawing = false;
             function scratch(e) {
-                if (!isDrawing) return;
                 const rect = canvas.getBoundingClientRect();
-                const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
-                const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
-                
-                ctx.beginPath();
-                ctx.arc(x, y, 16, 0, Math.PI * 2);
-                ctx.fill();
-
-                checkAndUnlock();
-            }
-
-            function checkAndUnlock() {
-                const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const x = (e.clientX || e.touches[0].clientX) - rect.left;
+                const y = (e.clientY || e.touches[0].clientY) - rect.top;
+                ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI * 2); ctx.fill();
+                const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
                 let cleared = 0;
-                for (let i = 3; i < imgData.data.length; i += 4) {
-                    if (imgData.data[i] === 0) cleared++;
-                }
-                // 修改門檻為 90% (0.9)
-                if (cleared > (canvas.width * canvas.height) * 0.9) {
-                    container.classList.add('is-unlocked');
-                    canvas.style.pointerEvents = 'none';
-                    canvas.style.opacity = '0'; // 達成後讓殘餘畫布消失，視覺更乾淨
-                    canvas.style.transition = 'opacity 0.5s';
+                for(let i=3; i<data.length; i+=4) if(data[i] === 0) cleared++;
+                if(cleared > (canvas.width * canvas.height) * 0.9) {
+                    item.classList.add('is-unlocked');
+                    canvas.style.opacity = '0'; canvas.style.pointerEvents = 'none';
                 }
             }
 
-            canvas.addEventListener('mousedown', () => isDrawing = true);
-            window.addEventListener('mouseup', () => isDrawing = false);
-            canvas.addEventListener('mousemove', scratch);
-            canvas.addEventListener('touchstart', (e) => { isDrawing = true; scratch(e); });
-            canvas.addEventListener('touchend', () => isDrawing = false);
-            canvas.addEventListener('touchmove', (e) => { scratch(e); e.preventDefault(); });
-
-            window.addEventListener('load', initCanvas);
-            setTimeout(initCanvas, 500); 
-        }
-
-        for (let i = 0; i < 25; i++) {
-            createCard(i);
+            canvas.addEventListener('touchstart', (e) => { drawing = true; scratch(e); e.preventDefault(); });
+            canvas.addEventListener('touchmove', (e) => { if(drawing) scratch(e); e.preventDefault(); });
+            canvas.addEventListener('mousedown', () => drawing = true);
+            window.addEventListener('mouseup', () => drawing = false);
+            canvas.addEventListener('mousemove', (e) => { if(drawing) scratch(e); });
+            
+            setTimeout(init, 500);
         }
     </script>
 </body>
